@@ -12,6 +12,11 @@ router.post('/quizzes/upload', upload.single('file'), adminController.uploadQuiz
 router.delete('/quizzes/:quizId', adminController.deleteQuiz);
 router.patch('/quizzes/:quizId', adminController.updateQuiz);
 
+// Manage questions within a quiz
+router.post('/quizzes/:quizId/questions', adminController.addQuestion);
+router.patch('/quizzes/:quizId/questions/:qIndex', adminController.updateQuestion);
+router.delete('/quizzes/:quizId/questions/:qIndex', adminController.deleteQuestion);
+
 router.get('/attempts', adminController.listAttempts);
 router.get('/attempts/download', adminController.downloadAttemptsCSV);
 

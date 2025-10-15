@@ -101,6 +101,73 @@ exports.updateQuiz = async (req, res) => {
   }
 };
 
+// Add a question to an existing quiz
+exports.addQuestion = async (req, res) => {
+  try {
+    const id = req.params.quizId;
+    const { questionText, options, correctIndex } = req.body;
+    if (!questionText || !Array.isArray(options) || options.length < 2 || typeof correctIndex !== 'number') {
+      return res.status(400).json({ message: 'Invalid question payload' });
+    }
+    const quiz = await Quiz.findById(id);
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+    quiz.questions.push({ questionText, options, correctIndex });
+    await quiz.save();
+    res.status(201).json({ message: 'Question added', questionsCount: quiz.questions.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Update a question at a given index within a quiz
+exports.updateQuestion = async (req, res) => {
+  try {
+    const id = req.params.quizId;
+    const qIndex = Number(req.params.qIndex);
+    if (isNaN(qIndex) || qIndex < 0) return res.status(400).json({ message: 'Invalid question index' });
+    const { questionText, options, correctIndex } = req.body;
+    const quiz = await Quiz.findById(id);
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+    if (!quiz.questions || qIndex >= quiz.questions.length) return res.status(404).json({ message: 'Question not found' });
+
+    const q = quiz.questions[qIndex];
+    if (questionText !== undefined) q.questionText = questionText;
+    if (options !== undefined) {
+      if (!Array.isArray(options) || options.length < 2) return res.status(400).json({ message: 'Options must be an array of at least 2 strings' });
+      q.options = options;
+    }
+    if (correctIndex !== undefined) {
+      if (typeof correctIndex !== 'number' || correctIndex < 0 || correctIndex >= q.options.length) return res.status(400).json({ message: 'Invalid correctIndex' });
+      q.correctIndex = correctIndex;
+    }
+
+    await quiz.save();
+    res.json({ message: 'Question updated' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Delete a question at a given index within a quiz
+exports.deleteQuestion = async (req, res) => {
+  try {
+    const id = req.params.quizId;
+    const qIndex = Number(req.params.qIndex);
+    if (isNaN(qIndex) || qIndex < 0) return res.status(400).json({ message: 'Invalid question index' });
+    const quiz = await Quiz.findById(id);
+    if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+    if (!quiz.questions || qIndex >= quiz.questions.length) return res.status(404).json({ message: 'Question not found' });
+    quiz.questions.splice(qIndex, 1);
+    await quiz.save();
+    res.json({ message: 'Question deleted', questionsCount: quiz.questions.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // Get a single quiz by id
 exports.getQuizById = async (req, res) => {
   try {
